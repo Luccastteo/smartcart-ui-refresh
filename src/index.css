@@ -2,95 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* SmartCart PRO Design System - Fintech Dark Minimal + Lime Accent */
+/* Typography: Inter (200/300/400/500) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core Backgrounds */
+    --background: 0 0% 4%;           /* #0a0a0a */
+    --background-elevated: 0 0% 6%;  /* #0f0f0f */
+    --foreground: 0 0% 90%;          /* #e5e5e5 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Card/Surface */
+    --card: 0 0% 10%;                /* #1a1a1a */
+    --card-foreground: 0 0% 90%;     /* #e5e5e5 */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    /* Popover/Modal */
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 90%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Lime Accent */
+    --primary: 82 84% 55%;           /* #a3e635 */
+    --primary-glow: 82 76% 44%;      /* #84cc16 */
+    --primary-foreground: 0 0% 4%;   /* Dark text on lime */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary */
+    --secondary: 0 0% 10%;           /* #1a1a1a */
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted */
+    --muted: 0 0% 15%;               /* #262626 */
+    --muted-foreground: 0 0% 64%;    /* #a3a3a3 */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent */
+    --accent: 82 84% 55%;            /* #a3e635 */
+    --accent-foreground: 0 0% 4%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Destructive */
+    --destructive: 0 72% 71%;        /* #f87171 */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Info/Blue */
+    --info: 217 91% 68%;             /* #60a5fa */
+    --info-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+    /* Borders & Inputs */
+    --border: 0 0% 15%;              /* #262626 */
+    --input: 0 0% 15%;
+    --ring: 82 84% 55%;
 
-    --sidebar-background: 0 0% 98%;
+    /* Border Radius Tokens */
+    --radius: 0.75rem;               /* 12px - Inputs/Buttons */
+    --radius-card: 1rem;             /* 16px - Cards */
+    --radius-hero: 1.25rem;          /* 20px - Hero Card */
+    --radius-modal: 1.5rem;          /* 24px - Modals */
+    --radius-icon: 0.75rem;          /* 12px - Icon containers */
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Text Colors */
+    --text-primary: 0 0% 90%;        /* #e5e5e5 */
+    --text-secondary: 0 0% 64%;      /* #a3a3a3 */
+    --text-muted: 0 0% 45%;          /* #737373 */
+    --text-subtle: 0 0% 32%;         /* #525252 */
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* Sidebar (Tab Bar) */
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 45%;
+    --sidebar-primary: 82 84% 55%;
+    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 82 84% 55%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Chart Colors */
+    --chart-1: 82 84% 55%;           /* Lime */
+    --chart-2: 217 91% 68%;          /* Blue */
+    --chart-3: 0 72% 71%;            /* Red */
+    --chart-4: 43 96% 58%;           /* Yellow */
+    --chart-5: 270 76% 70%;          /* Purple */
   }
 }
 
@@ -99,7 +88,291 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* iOS-style scrollbar */
+  ::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+  }
+}
+
+@layer components {
+  /* Typography Utilities */
+  .text-title-large {
+    @apply text-[28px] font-light leading-tight tracking-tight;
+  }
+
+  .text-title-medium {
+    @apply text-[20px] font-normal leading-tight;
+  }
+
+  .text-body {
+    @apply text-sm font-normal leading-relaxed;
+  }
+
+  .text-label {
+    @apply text-[11px] font-normal uppercase tracking-wider;
+  }
+
+  .text-caption {
+    @apply text-xs font-normal;
+  }
+
+  /* Card Variants */
+  .card-surface {
+    @apply bg-card rounded-[var(--radius-card)] border border-border;
+  }
+
+  .card-hero {
+    @apply rounded-[var(--radius-hero)] overflow-hidden;
+    background: linear-gradient(135deg, hsl(82 84% 55%), hsl(82 76% 44%));
+  }
+
+  .card-action {
+    @apply bg-card rounded-[var(--radius-card)] border border-border p-4 
+           transition-all duration-200 active:scale-[0.98] active:opacity-90;
+  }
+
+  /* Tab Bar */
+  .tab-bar {
+    @apply fixed bottom-0 left-0 right-0 
+           bg-background-elevated/95 backdrop-blur-xl
+           border-t border-border
+           safe-area-inset-bottom;
+  }
+
+  .tab-item {
+    @apply flex flex-col items-center justify-center gap-1 py-2 px-3
+           text-text-muted transition-colors duration-200;
+  }
+
+  .tab-item-active {
+    @apply text-primary;
+  }
+
+  /* Button Variants */
+  .btn-lime {
+    @apply bg-primary text-primary-foreground font-medium
+           rounded-[var(--radius)] px-4 py-3
+           transition-all duration-200 
+           active:scale-[0.98] active:opacity-90;
+  }
+
+  .btn-outline-lime {
+    @apply border border-primary text-primary font-medium
+           rounded-[var(--radius)] px-4 py-3
+           transition-all duration-200
+           active:scale-[0.98] active:opacity-90;
+  }
+
+  .btn-ghost {
+    @apply text-text-secondary font-normal
+           rounded-[var(--radius)] px-3 py-2
+           transition-all duration-200
+           active:bg-muted;
+  }
+
+  /* Icon Button */
+  .icon-btn {
+    @apply flex items-center justify-center
+           w-10 h-10 rounded-[var(--radius-icon)]
+           bg-card border border-border
+           text-text-secondary
+           transition-all duration-200
+           active:scale-[0.95] active:opacity-90;
+  }
+
+  .icon-btn-lime {
+    @apply flex items-center justify-center
+           w-10 h-10 rounded-[var(--radius-icon)]
+           bg-primary text-primary-foreground
+           transition-all duration-200
+           active:scale-[0.95] active:opacity-90;
+  }
+
+  /* FAB */
+  .fab {
+    @apply fixed bottom-24 right-4 z-50
+           w-14 h-14 rounded-full
+           bg-primary text-primary-foreground
+           flex items-center justify-center
+           shadow-lg shadow-primary/30
+           transition-all duration-200
+           active:scale-[0.95];
+  }
+
+  /* Progress Bar */
+  .progress-bar {
+    @apply h-1 w-full bg-muted rounded-full overflow-hidden;
+  }
+
+  .progress-bar-fill {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+
+  .progress-lime {
+    @apply bg-primary;
+  }
+
+  .progress-blue {
+    @apply bg-info;
+  }
+
+  /* Input iOS */
+  .input-ios {
+    @apply w-full bg-card border border-border
+           rounded-[var(--radius)] px-4 py-3
+           text-foreground placeholder:text-text-muted
+           focus:outline-none focus:ring-2 focus:ring-primary/30
+           transition-all duration-200;
+  }
+
+  /* Pill Badge */
+  .pill-badge {
+    @apply inline-flex items-center px-2.5 py-0.5
+           text-[10px] font-medium uppercase tracking-wider
+           rounded-full border;
+  }
+
+  .pill-lime {
+    @apply border-primary text-primary;
+  }
+
+  .pill-danger {
+    @apply bg-destructive/20 border-destructive/30 text-destructive;
+  }
+
+  /* Checkbox iOS */
+  .checkbox-ios {
+    @apply w-5 h-5 rounded-md border-2 border-border
+           flex items-center justify-center
+           transition-all duration-200;
+  }
+
+  .checkbox-ios-checked {
+    @apply bg-primary border-primary;
+  }
+
+  /* Modal iOS */
+  .modal-backdrop {
+    @apply fixed inset-0 bg-black/60 backdrop-blur-sm z-50;
+  }
+
+  .modal-content {
+    @apply fixed bottom-0 left-0 right-0 z-50
+           bg-card rounded-t-[var(--radius-modal)]
+           max-h-[90vh] overflow-y-auto
+           safe-area-inset-bottom;
+  }
+
+  .modal-handle {
+    @apply w-10 h-1 bg-text-muted/30 rounded-full mx-auto mt-2 mb-4;
+  }
+
+  /* Safe Area Utilities */
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Notification Badge */
+  .notification-badge {
+    @apply absolute -top-1 -right-1 w-4 h-4
+           bg-destructive text-white text-[10px] font-medium
+           rounded-full flex items-center justify-center;
+  }
+
+  /* List Item */
+  .list-item {
+    @apply flex items-center gap-3 p-4
+           bg-card rounded-[var(--radius-card)]
+           border border-border
+           transition-all duration-200
+           active:scale-[0.99] active:opacity-90;
+  }
+
+  /* Category Bar */
+  .category-bar {
+    @apply h-2 rounded-full bg-muted overflow-hidden;
+  }
+
+  /* Scan Line Animation */
+  @keyframes scan-line {
+    0%, 100% { transform: translateY(0); opacity: 0.5; }
+    50% { transform: translateY(200px); opacity: 1; }
+  }
+
+  .scan-line {
+    animation: scan-line 2s ease-in-out infinite;
+  }
+}
+
+@layer utilities {
+  .bg-background-elevated {
+    background-color: hsl(var(--background-elevated));
+  }
+
+  .text-text-primary {
+    color: hsl(var(--text-primary));
+  }
+
+  .text-text-secondary {
+    color: hsl(var(--text-secondary));
+  }
+
+  .text-text-muted {
+    color: hsl(var(--text-muted));
+  }
+
+  .text-text-subtle {
+    color: hsl(var(--text-subtle));
+  }
+
+  .bg-info {
+    background-color: hsl(var(--info));
+  }
+
+  .text-info {
+    color: hsl(var(--info));
+  }
+
+  /* Gradient utilities */
+  .gradient-lime {
+    background: linear-gradient(135deg, hsl(82 84% 55%), hsl(82 76% 44%));
+  }
+
+  .gradient-lime-subtle {
+    background: linear-gradient(135deg, hsl(82 84% 55% / 0.15), hsl(82 76% 44% / 0.1));
+  }
+
+  /* Active states */
+  .active-scale {
+    @apply transition-transform duration-150 active:scale-[0.97];
+  }
+
+  /* Hide scrollbar */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
