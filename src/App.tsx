@@ -12,11 +12,19 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
-      <Sonner />
+      <Sonner 
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: "hsl(0 0% 10%)",
+            border: "1px solid hsl(0 0% 15%)",
+            color: "hsl(0 0% 90%)",
+          },
+        }}
+      />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

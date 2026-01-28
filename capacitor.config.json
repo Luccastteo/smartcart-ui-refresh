@@ -1,0 +1,18 @@
+{
+  "appId": "app.lovable.smartcartpro",
+  "appName": "SmartCart PRO",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://f6337375-cf00-41ca-bf22-8bd32c1ff968.lovableproject.com?forceHideBadge=true",
+    "cleartext": true
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "preferredContentMode": "mobile",
+    "backgroundColor": "#0a0a0a"
+  },
+  "android": {
+    "backgroundColor": "#0a0a0a"
+  }
+}
