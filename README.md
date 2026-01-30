@@ -1,73 +1,51 @@
-# Welcome to your Lovable project
+# PAGLY
 
-## Project info
+Project transformed from web app to premium native mobile app.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Structure
 
-## How can I edit this code?
+- `/mobile`: React Native (Expo) - The main application.
+- `/backend`: NestJS - The backend API, database, authentication, and services.
+- `/src`: (Legacy) Original web application (kept for reference/web version).
 
-There are several ways of editing your application.
+## Stack Decisions
 
-**Use Lovable**
+### Mobile
+- **Framework**: React Native + Expo
+- **Language**: TypeScript
+- **Navigation**: React Navigation (Bottom Tabs)
+- **Styling**: Design functionality via tokens (constants), Linear Gradient, Lucide Icons.
+- **Features**: Expo Camera (Scanner), Expo File System (Export), Expo Haptics.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### Backend
+- **Framework**: NestJS
+- **Language**: TypeScript
+- **Database**: Postgres (via TypeORM/Prisma) - To be configured.
+- **Auth**: JWT Strategy.
 
-Changes made via Lovable will be committed automatically to this repo.
+## Setup Instructions
 
-**Use your preferred IDE**
+### Prerequisites
+- Node.js
+- Postgres Database (Local or Cloud like Supabase/Neon)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+### Running Mobile
+```bash
+cd mobile
+npm install
+npx expo start
 ```
 
-**Edit a file directly in GitHub**
+### Running Backend
+```bash
+cd backend
+npm install
+npm run start:dev
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Features Status
+- [ ] Auth (Login/Register)
+- [ ] Dashboard (Home/Lists)
+- [ ] Scanner (OCR)
+- [ ] Finances (Wallet)
+- [ ] Export/Import
