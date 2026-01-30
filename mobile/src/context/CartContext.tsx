@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 
 export interface CartProduct {
     id: string;
@@ -23,36 +24,43 @@ interface CartContextData {
 
 const CartContext = createContext<CartContextData>({} as CartContextData);
 
-const STORAGE_KEY = 'pagly_cart';
-
 export function CartProvider({ children }: { children: ReactNode }) {
+    const { user } = useAuth();
     const [products, setProducts] = useState<CartProduct[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Carregar dados do SecureStore ao iniciar
+    // Carregar carrinho do Supabase quando usuário logar
     useEffect(() => {
-        loadCart();
-    }, []);
-
-    // Salvar no SecureStore sempre que produtos mudarem
-    useEffect(() => {
-        if (!loading) {
-            saveCart();
+        if (user) {
+            loadCart();
+        } else {
+            setProducts([]);
+            setLoading(false);
         }
-    }, [products, loading]);
+    }, [user]);
 
     const loadCart = async () => {
+        if (!user) return;
+
         try {
-            const data = await SecureStore.getItemAsync(STORAGE_KEY);
-            if (data) {
-                const parsed = JSON.parse(data);
-                // Converter strings de data de volta para Date
-                const productsWithDates = parsed.map((p: any) => ({
-                    ...p,
-                    addedAt: new Date(p.addedAt)
-                }));
-                setProducts(productsWithDates);
-            }
+            const { data, error } = await supabase
+                .from('cart_items')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            const cartProducts: CartProduct[] = (data || []).map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                price: parseFloat(item.price),
+                quantity: parseFloat(item.quantity),
+                imageUri: item.image_url,
+                addedAt: new Date(item.created_at),
+            }));
+
+            setProducts(cartProducts);
         } catch (error) {
             console.error('Erro ao carregar carrinho:', error);
         } finally {
@@ -60,45 +68,103 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const saveCart = async () => {
+    const addProduct = async (product: Omit<CartProduct, 'id' | 'addedAt'>) => {
+        if (!user) {
+            console.error('Usuário não autenticado');
+            return;
+        }
+
         try {
-            await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(products));
+            const { data, error } = await supabase
+                .from('cart_items')
+                .insert({
+                    user_id: user.id,
+                    name: product.name,
+                    price: product.price,
+                    quantity: product.quantity,
+                    image_url: product.imageUri,
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            const newProduct: CartProduct = {
+                id: data.id,
+                name: data.name,
+                price: parseFloat(data.price),
+                quantity: parseFloat(data.quantity),
+                imageUri: data.image_url,
+                addedAt: new Date(data.created_at),
+            };
+
+            setProducts(prev => [newProduct, ...prev]);
         } catch (error) {
-            console.error('Erro ao salvar carrinho:', error);
+            console.error('Erro ao adicionar produto:', error);
+            throw error;
         }
     };
 
-    const addProduct = async (product: Omit<CartProduct, 'id' | 'addedAt'>) => {
-        const newProduct: CartProduct = {
-            ...product,
-            id: Date.now().toString(),
-            addedAt: new Date(),
-        };
-
-        setProducts(prev => [...prev, newProduct]);
-    };
-
     const removeProduct = async (id: string) => {
-        setProducts(prev => prev.filter(p => p.id !== id));
+        if (!user) return;
+
+        try {
+            const { error } = await supabase
+                .from('cart_items')
+                .delete()
+                .eq('id', id)
+                .eq('user_id', user.id);
+
+            if (error) throw error;
+
+            setProducts(prev => prev.filter(p => p.id !== id));
+        } catch (error) {
+            console.error('Erro ao remover produto:', error);
+            throw error;
+        }
     };
 
     const updateQuantity = async (id: string, quantity: number) => {
+        if (!user) return;
+
         if (quantity <= 0) {
             await removeProduct(id);
             return;
         }
 
-        setProducts(prev =>
-            prev.map(p => (p.id === id ? { ...p, quantity } : p))
-        );
+        try {
+            const { error } = await supabase
+                .from('cart_items')
+                .update({ quantity })
+                .eq('id', id)
+                .eq('user_id', user.id);
+
+            if (error) throw error;
+
+            setProducts(prev =>
+                prev.map(p => (p.id === id ? { ...p, quantity } : p))
+            );
+        } catch (error) {
+            console.error('Erro ao atualizar quantidade:', error);
+            throw error;
+        }
     };
 
     const clearCart = async () => {
-        setProducts([]);
+        if (!user) return;
+
         try {
-            await SecureStore.deleteItemAsync(STORAGE_KEY);
+            const { error } = await supabase
+                .from('cart_items')
+                .delete()
+                .eq('user_id', user.id);
+
+            if (error) throw error;
+
+            setProducts([]);
         } catch (error) {
             console.error('Erro ao limpar carrinho:', error);
+            throw error;
         }
     };
 
