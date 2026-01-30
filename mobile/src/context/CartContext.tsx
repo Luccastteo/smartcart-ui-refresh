@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 export interface CartProduct {
     id: string;
@@ -23,27 +23,27 @@ interface CartContextData {
 
 const CartContext = createContext<CartContextData>({} as CartContextData);
 
-const STORAGE_KEY = '@pagly:cart';
+const STORAGE_KEY = 'pagly_cart';
 
 export function CartProvider({ children }: { children: ReactNode }) {
     const [products, setProducts] = useState<CartProduct[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Carregar dados do AsyncStorage ao iniciar
+    // Carregar dados do SecureStore ao iniciar
     useEffect(() => {
         loadCart();
     }, []);
 
-    // Salvar no AsyncStorage sempre que produtos mudarem
+    // Salvar no SecureStore sempre que produtos mudarem
     useEffect(() => {
         if (!loading) {
             saveCart();
         }
-    }, [products]);
+    }, [products, loading]);
 
     const loadCart = async () => {
         try {
-            const data = await AsyncStorage.getItem(STORAGE_KEY);
+            const data = await SecureStore.getItemAsync(STORAGE_KEY);
             if (data) {
                 const parsed = JSON.parse(data);
                 // Converter strings de data de volta para Date
@@ -62,7 +62,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const saveCart = async () => {
         try {
-            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+            await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(products));
         } catch (error) {
             console.error('Erro ao salvar carrinho:', error);
         }
@@ -95,7 +95,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const clearCart = async () => {
         setProducts([]);
-        await AsyncStorage.removeItem(STORAGE_KEY);
+        try {
+            await SecureStore.deleteItemAsync(STORAGE_KEY);
+        } catch (error) {
+            console.error('Erro ao limpar carrinho:', error);
+        }
     };
 
     // Calcular total
