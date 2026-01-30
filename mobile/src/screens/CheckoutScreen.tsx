@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { COLORS, FONTS, RADIUS } from '../constants/theme';
-import { ArrowLeft, Check } from 'lucide-react-native';
-import PaymentCard from '../components/PaymentCard';
-import { MOCK_PAYMENT_METHODS } from '../mocks/data';
+import { ArrowLeft, Check, CreditCard, Smartphone, Building2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { useCart } from '../context/CartContext';
 
-export default function CheckoutScreen({ route, navigation }: any) {
-    const { total, items } = route.params;
-    const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
+type PaymentMethod = 'pix' | 'credit' | 'debit';
+
+export default function CheckoutScreen({ navigation }: any) {
+    const { products, total, itemCount, clearCart } = useCart();
+    const [selectedPayment, setSelectedPayment] = useState<PaymentMethod | null>(null);
     const [processing, setProcessing] = useState(false);
 
-    const handleSelectPayment = async (method: string) => {
+    const handleSelectPayment = async (method: PaymentMethod) => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setSelectedPayment(method);
     };
@@ -25,20 +26,75 @@ export default function CheckoutScreen({ route, navigation }: any) {
         setProcessing(true);
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        // Simular processamento
-        setTimeout(() => {
+        // Simular processamento de pagamento
+        // TODO: Integrar com Mercado Pago SDK
+        setTimeout(async () => {
             setProcessing(false);
+
+            // Limpar carrinho após pagamento bem-sucedido
+            await clearCart();
+
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
             Alert.alert(
-                'Pagamento Confirmado! 🎉',
-                `Compra de R$ ${total.toFixed(2)} processada com sucesso.`,
+                '🎉 Pagamento Confirmado!',
+                `Compra de R$ ${total.toFixed(2)} processada com sucesso.\\n\\nMétodo: ${getPaymentMethodName(selectedPayment)}`,
                 [
                     {
-                        text: 'OK',
+                        text: 'Ver Recibo',
+                        onPress: () => {
+                            // TODO: Navegar para tela de recibo
+                            navigation.navigate('Tabs', { screen: 'Home' });
+                        },
+                    },
+                    {
+                        text: 'Voltar ao Início',
                         onPress: () => navigation.navigate('Tabs', { screen: 'Home' }),
+                        style: 'cancel'
                     },
                 ]
             );
-        }, 2000);
+        }, 2500);
+    };
+
+    const getPaymentMethodName = (method: PaymentMethod) => {
+        switch (method) {
+            case 'pix': return 'PIX';
+            case 'credit': return 'Cartão de Crédito';
+            case 'debit': return 'Cartão de Débito';
+            default: return '';
+        }
+    };
+
+    const PaymentOption = ({ method, icon: Icon, title, subtitle }: {
+        method: PaymentMethod;
+        icon: any;
+        title: string;
+        subtitle: string;
+    }) => {
+        const isSelected = selectedPayment === method;
+
+        return (
+            <TouchableOpacity
+                style={[styles.paymentOption, isSelected && styles.paymentOptionSelected]}
+                onPress={() => handleSelectPayment(method)}
+            >
+                <View style={[styles.iconBox, isSelected && styles.iconBoxSelected]}>
+                    <Icon color={isSelected ? COLORS.accent : COLORS.textSecondary} size={24} />
+                </View>
+                <View style={styles.paymentInfo}>
+                    <Text style={[styles.paymentTitle, isSelected && styles.paymentTitleSelected]}>
+                        {title}
+                    </Text>
+                    <Text style={styles.paymentSubtitle}>{subtitle}</Text>
+                </View>
+                {isSelected && (
+                    <View style={styles.checkIcon}>
+                        <Check color={COLORS.accent} size={20} strokeWidth={3} />
+                    </View>
+                )}
+            </TouchableOpacity>
+        );
     };
 
     return (
@@ -59,8 +115,27 @@ export default function CheckoutScreen({ route, navigation }: any) {
                     <View style={styles.summaryCard}>
                         <View style={styles.summaryRow}>
                             <Text style={styles.summaryLabel}>Total de itens</Text>
-                            <Text style={styles.summaryValue}>{items.length} {items.length === 1 ? 'item' : 'itens'}</Text>
+                            <Text style={styles.summaryValue}>{itemCount} {itemCount === 1 ? 'item' : 'itens'}</Text>
                         </View>
+
+                        {/* Lista de produtos */}
+                        <View style={styles.divider} />
+                        {products.slice(0, 3).map((product, index) => (
+                            <View key={product.id} style={styles.productRow}>
+                                <Text style={styles.productName} numberOfLines={1}>
+                                    {product.quantity}x {product.name}
+                                </Text>
+                                <Text style={styles.productPrice}>
+                                    R$ {(product.price * product.quantity).toFixed(2)}
+                                </Text>
+                            </View>
+                        ))}
+                        {products.length > 3 && (
+                            <Text style={styles.moreItems}>
+                                +{products.length - 3} {products.length - 3 === 1 ? 'item' : 'itens'}
+                            </Text>
+                        )}
+
                         <View style={styles.divider} />
                         <View style={styles.summaryRow}>
                             <Text style={styles.totalLabel}>Total a pagar</Text>
@@ -73,33 +148,56 @@ export default function CheckoutScreen({ route, navigation }: any) {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Método de Pagamento</Text>
 
-                    {MOCK_PAYMENT_METHODS.map((method) => (
-                        <PaymentCard
-                            key={method.id}
-                            type={method.type as 'pix' | 'card' | 'bank'}
-                            title={method.title}
-                            subtitle={method.subtitle}
-                            selected={selectedPayment === method.id}
-                            onPress={() => handleSelectPayment(method.id)}
-                        />
-                    ))}
+                    <PaymentOption
+                        method="pix"
+                        icon={Smartphone}
+                        title="PIX"
+                        subtitle="Aprovação instantânea"
+                    />
+
+                    <PaymentOption
+                        method="credit"
+                        icon={CreditCard}
+                        title="Cartão de Crédito"
+                        subtitle="Parcelamento disponível"
+                    />
+
+                    <PaymentOption
+                        method="debit"
+                        icon={Building2}
+                        title="Cartão de Débito"
+                        subtitle="Débito em conta"
+                    />
+                </View>
+
+                {/* Informações Adicionais */}
+                <View style={styles.infoBox}>
+                    <Text style={styles.infoText}>
+                        🔒 Pagamento 100% seguro e criptografado
+                    </Text>
+                    <Text style={styles.infoText}>
+                        ✅ Confirmação instantânea por e-mail
+                    </Text>
                 </View>
             </ScrollView>
 
-            {/* Botão Confirmar */}
+            {/* Footer com botão de confirmar */}
             <View style={styles.footer}>
                 <TouchableOpacity
-                    style={[styles.confirmButton, !selectedPayment && styles.confirmButtonDisabled]}
+                    style={[styles.confirmButton, (!selectedPayment || processing) && styles.confirmButtonDisabled]}
                     onPress={handleConfirmPayment}
                     disabled={!selectedPayment || processing}
-                    activeOpacity={0.8}
                 >
                     {processing ? (
-                        <Text style={styles.confirmButtonText}>Processando...</Text>
+                        <ActivityIndicator color={COLORS.background} />
                     ) : (
                         <>
-                            <Check color="#000" size={24} strokeWidth={2.5} />
-                            <Text style={styles.confirmButtonText}>Confirmar Pagamento</Text>
+                            <Text style={styles.confirmButtonText}>
+                                Confirmar Pagamento
+                            </Text>
+                            <Text style={styles.confirmButtonValue}>
+                                R$ {total.toFixed(2)}
+                            </Text>
                         </>
                     )}
                 </TouchableOpacity>
@@ -109,112 +207,85 @@ export default function CheckoutScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLORS.background,
-        paddingTop: 60,
-    },
+    container: { flex: 1, backgroundColor: COLORS.background },
     header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 24,
-        marginBottom: 24,
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20
     },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: COLORS.surface,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    },
-    headerTitle: {
-        fontFamily: FONTS.bold,
-        fontSize: 20,
-        color: COLORS.textPrimary,
-    },
-    scrollContent: {
-        paddingHorizontal: 24,
-        paddingBottom: 120,
-    },
-    section: {
-        marginBottom: 32,
-    },
+    backButton: { padding: 8 },
+    headerTitle: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.textPrimary },
+
+    scrollContent: { paddingHorizontal: 24, paddingBottom: 120 },
+    section: { marginBottom: 32 },
     sectionTitle: {
-        fontFamily: FONTS.bold,
-        fontSize: 16,
-        color: COLORS.textPrimary,
-        marginBottom: 16,
+        fontFamily: FONTS.bold, fontSize: 18, color: COLORS.textPrimary, marginBottom: 16
     },
+
     summaryCard: {
-        backgroundColor: COLORS.surface,
-        padding: 20,
-        borderRadius: RADIUS.lg,
-        borderWidth: 1,
-        borderColor: COLORS.border,
+        backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 20
     },
     summaryRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'
     },
-    summaryLabel: {
-        fontFamily: FONTS.regular,
-        fontSize: 15,
-        color: COLORS.textSecondary,
+    summaryLabel: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textSecondary },
+    summaryValue: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textPrimary },
+
+    productRow: {
+        flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8
     },
-    summaryValue: {
-        fontFamily: FONTS.bold,
-        fontSize: 15,
-        color: COLORS.textPrimary,
+    productName: {
+        fontFamily: FONTS.regular, fontSize: 13, color: COLORS.textSecondary, flex: 1, marginRight: 12
     },
-    divider: {
-        height: 1,
-        backgroundColor: COLORS.border,
-        marginVertical: 12,
+    productPrice: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textPrimary },
+    moreItems: {
+        fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textSecondary,
+        fontStyle: 'italic', paddingTop: 8
     },
-    totalLabel: {
-        fontFamily: FONTS.bold,
-        fontSize: 18,
-        color: COLORS.textPrimary,
+
+    divider: { height: 1, backgroundColor: COLORS.muted, marginVertical: 16 },
+    totalLabel: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.textPrimary },
+    totalValue: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.accent },
+
+    paymentOption: {
+        flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface,
+        borderRadius: RADIUS.lg, padding: 16, marginBottom: 12,
+        borderWidth: 2, borderColor: 'transparent'
     },
-    totalValue: {
-        fontFamily: FONTS.bold,
-        fontSize: 24,
-        color: COLORS.accent,
+    paymentOptionSelected: { borderColor: COLORS.accent, backgroundColor: 'rgba(163, 230, 53, 0.05)' },
+    iconBox: {
+        width: 48, height: 48, borderRadius: RADIUS.md, backgroundColor: COLORS.muted,
+        justifyContent: 'center', alignItems: 'center'
     },
+    iconBoxSelected: { backgroundColor: 'rgba(163, 230, 53, 0.15)' },
+    paymentInfo: { flex: 1, marginLeft: 16 },
+    paymentTitle: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.textPrimary, marginBottom: 4 },
+    paymentTitleSelected: { color: COLORS.accent },
+    paymentSubtitle: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.textSecondary },
+    checkIcon: {
+        width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(163, 230, 53, 0.15)',
+        justifyContent: 'center', alignItems: 'center'
+    },
+
+    infoBox: {
+        backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 16,
+        borderLeftWidth: 4, borderLeftColor: COLORS.accent
+    },
+    infoText: {
+        fontFamily: FONTS.regular, fontSize: 13, color: COLORS.textSecondary,
+        marginBottom: 8, lineHeight: 20
+    },
+
     footer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: COLORS.background,
-        padding: 24,
-        paddingBottom: 40,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        backgroundColor: COLORS.surface, paddingHorizontal: 24, paddingVertical: 20,
+        borderTopWidth: 1, borderTopColor: COLORS.muted
     },
     confirmButton: {
-        flexDirection: 'row',
-        backgroundColor: COLORS.accent,
-        paddingVertical: 18,
-        borderRadius: RADIUS.lg,
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 8,
+        backgroundColor: COLORS.accent, borderRadius: RADIUS.lg,
+        paddingVertical: 18, flexDirection: 'row', justifyContent: 'space-between',
+        alignItems: 'center', paddingHorizontal: 24
     },
-    confirmButtonDisabled: {
-        backgroundColor: COLORS.muted,
-        opacity: 0.5,
-    },
-    confirmButtonText: {
-        fontFamily: FONTS.bold,
-        fontSize: 16,
-        color: '#000',
-        marginLeft: 8,
-    },
+    confirmButtonDisabled: { backgroundColor: COLORS.muted, opacity: 0.5 },
+    confirmButtonText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.background },
+    confirmButtonValue: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.background },
 });
