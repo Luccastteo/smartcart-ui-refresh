@@ -4,9 +4,11 @@ import { COLORS, FONTS, RADIUS } from '../constants/theme';
 import { Wallet, ShoppingCart, TrendingUp, Bell, User, ChevronRight, Camera, Sparkles, ArrowUpRight, ArrowDownRight, CreditCard, Coffee, ShoppingBag, Zap } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 export default function HomeScreen({ navigation }: any) {
     const { signOut } = useAuth();
+    const { itemCount } = useCart();
     const [refreshing, setRefreshing] = useState(false);
 
     const getGreeting = () => {

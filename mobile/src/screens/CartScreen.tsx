@@ -1,92 +1,103 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, RefreshControl } from 'react-native';
 import { COLORS, FONTS, RADIUS } from '../constants/theme';
-import { Minus, Plus, Trash, ArrowRight } from 'lucide-react-native';
-
-const MOCK_CART = [
-    { id: '1', name: 'Leite Integral 1L', price: 4.50, qty: 2, image: 'https://via.placeholder.com/100' },
-    { id: '2', name: 'Pão de Forma', price: 8.90, qty: 1, image: 'https://via.placeholder.com/100' },
-    { id: '3', name: 'Café Melitta 500g', price: 18.90, qty: 1, image: 'https://via.placeholder.com/100' },
-    { id: '4', name: 'Maçã Fuji Kg', price: 12.50, qty: 0.5, image: 'https://via.placeholder.com/100' },
-];
+import { Minus, Plus, Trash, ArrowRight, ShoppingBag } from 'lucide-react-native';
+import { useCart } from '../context/CartContext';
 
 export default function CartScreen({ navigation }: any) {
-    const [cartItems, setCartItems] = useState(MOCK_CART);
-    const [refreshing, setRefreshing] = useState(false);
-
-    const updateQty = (id: string, delta: number) => {
-        setCartItems(prev => prev.map(item => {
-            if (item.id === id) {
-                const newQty = Math.max(0, item.qty + delta);
-                return { ...item, qty: newQty };
-            }
-            return item;
-        }).filter(item => item.qty > 0));
-    };
+    const { products, total, itemCount, updateQuantity, removeProduct, loading } = useCart();
+    const [refreshing, setRefreshing] = React.useState(false);
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
-        try {
-            // Simular atualização do carrinho
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            // Aqui você pode adicionar: await fetchCartItems();
-        } catch (error) {
-            console.error('Erro ao atualizar:', error);
-        } finally {
-            setRefreshing(false);
-        }
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setRefreshing(false);
     }, []);
 
-    const total = cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
-
-    const renderItem = ({ item }: { item: typeof MOCK_CART[0] }) => (
+    const renderItem = ({ item }: { item: typeof products[0] }) => (
         <View style={styles.cartItem}>
             <View style={styles.imagePlaceholder}>
-                {/* <Image source={{ uri: item.image }} style={styles.itemImage} /> */}
-                <Text style={{ fontSize: 24 }}>🛒</Text>
+                {item.imageUri ? (
+                    <Image source={{ uri: item.imageUri }} style={styles.itemImage} />
+                ) : (
+                    <Text style={{ fontSize: 24 }}>🛒</Text>
+                )}
             </View>
             <View style={styles.itemDetails}>
                 <Text style={styles.itemName}>{item.name}</Text>
                 <Text style={styles.itemPrice}>R$ {item.price.toFixed(2)}</Text>
             </View>
-            <View style={styles.qtyContainer}>
-                <TouchableOpacity onPress={() => updateQty(item.id, -1)} style={styles.qtyBtn}>
-                    <Minus color={COLORS.textSecondary} size={16} />
+            <View style={styles.qtyControls}>
+                <TouchableOpacity
+                    style={styles.qtyButton}
+                    onPress={() => updateQuantity(item.id, item.quantity - 1)}
+                >
+                    <Minus color={COLORS.textPrimary} size={16} />
                 </TouchableOpacity>
-                <Text style={styles.qtyText}>{item.qty}</Text>
-                <TouchableOpacity onPress={() => updateQty(item.id, 1)} style={styles.qtyBtn}>
+                <Text style={styles.qtyText}>{item.quantity}</Text>
+                <TouchableOpacity
+                    style={styles.qtyButton}
+                    onPress={() => updateQuantity(item.id, item.quantity + 1)}
+                >
                     <Plus color={COLORS.textPrimary} size={16} />
                 </TouchableOpacity>
             </View>
+            <TouchableOpacity
+                style={styles.removeButton}
+                onPress={() => removeProduct(item.id)}
+            >
+                <Trash color={COLORS.statusError} size={20} />
+            </TouchableOpacity>
         </View>
     );
+
+    if (loading) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.loadingText}>Carregando...</Text>
+            </View>
+        );
+    }
+
+    if (products.length === 0) {
+        return (
+            <View style={styles.container}>
+                <View style={styles.emptyContainer}>
+                    <ShoppingBag color={COLORS.muted} size={64} strokeWidth={1.5} />
+                    <Text style={styles.emptyTitle}>Carrinho Vazio</Text>
+                    <Text style={styles.emptyMessage}>
+                        Capture produtos para adicionar ao carrinho
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.captureButton}
+                        onPress={() => navigation.navigate('Capture')}
+                    >
+                        <Text style={styles.captureButtonText}>Capturar Produto</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Carrinho</Text>
-                <Text style={styles.headerSubtitle}>{cartItems.length} itens</Text>
+                <Text style={styles.title}>Meu Carrinho</Text>
+                <Text style={styles.itemCount}>{itemCount} {itemCount === 1 ? 'item' : 'itens'}</Text>
             </View>
 
             <FlatList
-                data={cartItems}
+                data={products}
                 renderItem={renderItem}
                 keyExtractor={item => item.id}
+                contentContainerStyle={styles.listContent}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={onRefresh}
-                        colors={[COLORS.accent]}
                         tintColor={COLORS.accent}
-                        progressBackgroundColor={COLORS.surface}
+                        colors={[COLORS.accent]}
                     />
-                }
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>Seu carrinho está vazio</Text>
-                    </View>
                 }
             />
 
@@ -97,10 +108,10 @@ export default function CartScreen({ navigation }: any) {
                 </View>
                 <TouchableOpacity
                     style={styles.checkoutButton}
-                    onPress={() => navigation.navigate('Checkout', { total, items: cartItems })}
+                    onPress={() => navigation.navigate('Checkout')}
                 >
                     <Text style={styles.checkoutText}>Finalizar Compra</Text>
-                    <ArrowRight color="#000" size={20} />
+                    <ArrowRight color={COLORS.background} size={20} />
                 </TouchableOpacity>
             </View>
         </View>
@@ -108,39 +119,66 @@ export default function CartScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.background, paddingTop: 60 },
-    header: { paddingHorizontal: 24, marginBottom: 24 },
-    headerTitle: { fontFamily: FONTS.bold, fontSize: 32, color: COLORS.textPrimary },
-    headerSubtitle: { fontFamily: FONTS.regular, fontSize: 16, color: COLORS.textSecondary, marginTop: 4 },
-    listContent: { paddingHorizontal: 24, paddingBottom: 100 },
+    container: { flex: 1, backgroundColor: COLORS.background },
+    header: {
+        paddingHorizontal: 24, paddingTop: 60, paddingBottom: 20,
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'
+    },
+    title: { fontFamily: FONTS.bold, fontSize: 28, color: COLORS.textPrimary },
+    itemCount: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary },
+    listContent: { paddingHorizontal: 24, paddingBottom: 140 },
+
     cartItem: {
         flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface,
-        padding: 12, borderRadius: RADIUS.md, marginBottom: 12,
-        borderWidth: 1, borderColor: COLORS.border
+        borderRadius: RADIUS.lg, padding: 16, marginBottom: 12
     },
     imagePlaceholder: {
-        width: 64, height: 64, borderRadius: RADIUS.sm, backgroundColor: COLORS.surfaceHighlight,
-        justifyContent: 'center', alignItems: 'center', marginRight: 16
+        width: 60, height: 60, borderRadius: RADIUS.md,
+        backgroundColor: COLORS.muted, justifyContent: 'center', alignItems: 'center'
     },
-    itemImage: { width: 64, height: 64, borderRadius: RADIUS.sm },
-    itemDetails: { flex: 1 },
-    itemName: { fontFamily: FONTS.bold, color: COLORS.textPrimary, fontSize: 14, marginBottom: 4 },
-    itemPrice: { fontFamily: FONTS.regular, color: COLORS.accent, fontSize: 14 },
-    qtyContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.background, borderRadius: 8 },
-    qtyBtn: { padding: 8 },
-    qtyText: { fontFamily: FONTS.medium, color: COLORS.textPrimary, width: 24, textAlign: 'center' },
+    itemImage: { width: 60, height: 60, borderRadius: RADIUS.md },
+    itemDetails: { flex: 1, marginLeft: 16 },
+    itemName: { fontFamily: FONTS.medium, fontSize: 15, color: COLORS.textPrimary, marginBottom: 4 },
+    itemPrice: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.accent },
+
+    qtyControls: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    qtyButton: {
+        width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.muted,
+        justifyContent: 'center', alignItems: 'center'
+    },
+    qtyText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.textPrimary, minWidth: 24, textAlign: 'center' },
+    removeButton: { marginLeft: 12, padding: 8 },
+
     footer: {
-        padding: 24, paddingBottom: 40, borderTopWidth: 1, borderTopColor: COLORS.border,
-        backgroundColor: COLORS.surface
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        backgroundColor: COLORS.surface, paddingHorizontal: 24, paddingVertical: 20,
+        borderTopWidth: 1, borderTopColor: COLORS.muted
     },
-    totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-    totalLabel: { fontFamily: FONTS.regular, color: COLORS.textSecondary, fontSize: 16 },
-    totalValue: { fontFamily: FONTS.bold, color: COLORS.textPrimary, fontSize: 32 },
+    totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+    totalLabel: { fontFamily: FONTS.medium, fontSize: 16, color: COLORS.textSecondary },
+    totalValue: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.accent },
     checkoutButton: {
-        backgroundColor: COLORS.accent, height: 56, borderRadius: RADIUS.md,
-        flexDirection: 'row', justifyContent: 'center', alignItems: 'center'
+        backgroundColor: COLORS.accent, borderRadius: RADIUS.lg,
+        paddingVertical: 16, flexDirection: 'row', justifyContent: 'center',
+        alignItems: 'center', gap: 8
     },
-    checkoutText: { fontFamily: FONTS.bold, color: '#000', fontSize: 16, marginRight: 8 },
-    emptyContainer: { alignItems: 'center', marginTop: 40 },
-    emptyText: { fontFamily: FONTS.regular, color: COLORS.textSecondary },
+    checkoutText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.background },
+
+    emptyContainer: {
+        flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40
+    },
+    emptyTitle: {
+        fontFamily: FONTS.bold, fontSize: 24, color: COLORS.textPrimary,
+        marginTop: 24, marginBottom: 8
+    },
+    emptyMessage: {
+        fontFamily: FONTS.regular, fontSize: 15, color: COLORS.textSecondary,
+        textAlign: 'center', marginBottom: 32
+    },
+    captureButton: {
+        backgroundColor: COLORS.accent, paddingHorizontal: 32, paddingVertical: 16,
+        borderRadius: RADIUS.lg
+    },
+    captureButtonText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.background },
+    loadingText: { fontFamily: FONTS.medium, fontSize: 16, color: COLORS.textSecondary },
 });

@@ -5,8 +5,10 @@ import { COLORS, FONTS, RADIUS } from '../constants/theme';
 import { X, Camera, Sparkles, Image as ImageIcon } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+import { useCart } from '../context/CartContext';
 
 export default function CaptureScreen({ navigation }: any) {
+    const { addProduct } = useCart();
     const [permission, requestPermission] = useCameraPermissions();
     const [analyzing, setAnalyzing] = useState(false);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -32,6 +34,9 @@ export default function CaptureScreen({ navigation }: any) {
 
             const result = mockResults[Math.floor(Math.random() * mockResults.length)];
 
+            // Extrair preço numérico
+            const priceValue = parseFloat(result.price.replace('R$', '').replace(',', '.').trim());
+
             Alert.alert(
                 '✨ Produto Identificado!',
                 `📦 ${result.product}\n💰 ${result.price}\n\nDeseja adicionar à sua lista?`,
@@ -44,13 +49,23 @@ export default function CaptureScreen({ navigation }: any) {
                     {
                         text: 'Adicionar à Lista',
                         onPress: async () => {
+                            // Adicionar produto ao carrinho
+                            await addProduct({
+                                name: result.product,
+                                price: priceValue,
+                                quantity: 1,
+                                imageUri: imageUri
+                            });
+
                             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            setCapturedImage(null);
+
                             Alert.alert(
                                 '✅ Adicionado!',
                                 `${result.product} foi adicionado à sua lista de compras`,
                                 [
-                                    { text: 'Capturar Outro', onPress: () => setCapturedImage(null) },
-                                    { text: 'Ver Lista', onPress: () => navigation.navigate('Tabs', { screen: 'List' }) },
+                                    { text: 'Capturar Outro' },
+                                    { text: 'Ver Carrinho', onPress: () => navigation.navigate('Tabs', { screen: 'Cart' }) },
                                 ]
                             );
                         }

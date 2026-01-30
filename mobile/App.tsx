@@ -4,6 +4,7 @@ import { useFonts, Inter_400Regular, Inter_500Medium, Inter_700Bold, Inter_300Li
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { CartProvider } from './src/context/CartContext';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import AuthenticatedNavigator from './src/navigation/AuthenticatedNavigator';
@@ -66,8 +67,10 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <StatusBar style="light" />
-        <RootNavigation />
+        <CartProvider>
+          <StatusBar style="light" />
+          <RootNavigation />
+        </CartProvider>
       </AuthProvider>
     </ErrorBoundary>
   );
