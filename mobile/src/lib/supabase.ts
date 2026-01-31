@@ -5,6 +5,16 @@ import * as SecureStore from 'expo-secure-store';
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
+// Debug: verificar se as variáveis estão carregando
+console.log('🔍 Supabase URL:', supabaseUrl);
+console.log('🔍 Anon Key (primeiros 20 chars):', supabaseAnonKey.substring(0, 20));
+
+if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('❌ ERRO: Variáveis de ambiente não carregadas!');
+    console.error('URL:', supabaseUrl);
+    console.error('Key:', supabaseAnonKey ? 'Presente' : 'Ausente');
+}
+
 // Adapter para usar SecureStore como storage do Supabase
 const ExpoSecureStoreAdapter = {
     getItem: (key: string) => {

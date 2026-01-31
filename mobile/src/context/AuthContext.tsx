@@ -74,6 +74,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
             signUp: async (email: string, password: string, name: string) => {
                 try {
+                    console.log('🔍 Tentando criar conta com:', { email, name });
+
                     const { data, error } = await supabase.auth.signUp({
                         email,
                         password,
@@ -81,10 +83,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                             data: {
                                 name,
                             },
+                            emailRedirectTo: undefined,
                         },
                     });
 
-                    if (error) throw error;
+                    console.log('🔍 Resposta do Supabase:', { data, error });
+
+                    if (error) {
+                        console.error('❌ Erro do Supabase:', error);
+                        throw error;
+                    }
 
                     // O trigger no Supabase criará o profile automaticamente
                     setSession(data.session);
@@ -92,7 +100,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
                     Alert.alert(
                         'Sucesso!',
-                        'Conta criada com sucesso. Verifique seu email para confirmar.'
+                        'Conta criada com sucesso!'
                     );
                 } catch (error: any) {
                     console.error('Erro no registro:', error);

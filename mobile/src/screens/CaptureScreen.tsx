@@ -18,28 +18,24 @@ export default function CaptureScreen({ navigation }: any) {
         setAnalyzing(true);
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-        // Simular análise de imagem (Google Lens style)
-        // Na versão real, aqui você chamaria uma API de OCR/Vision AI
-        setTimeout(async () => {
+        try {
+            // OCR REAL com Google Vision API
+            const { extractTextFromImage, parseProductInfo } = await import('../services/ocr');
+
+            console.log('🔍 Extraindo texto da imagem...');
+            const extractedText = await extractTextFromImage(imageUri);
+            console.log('📝 Texto extraído:', extractedText);
+
+            // Parse nome e preço do texto
+            const { name, price } = parseProductInfo(extractedText);
+            console.log('✅ Produto identificado:', { name, price });
+
             setAnalyzing(false);
             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-            // Mock de resultado da análise
-            const mockResults = [
-                { product: 'Café Pilão 500g', price: 'R$ 18,90' },
-                { product: 'Leite Integral Itambé 1L', price: 'R$ 5,49' },
-                { product: 'Pão de Forma Pullman', price: 'R$ 7,99' },
-                { product: 'Arroz Tio João 5kg', price: 'R$ 24,90' },
-            ];
-
-            const result = mockResults[Math.floor(Math.random() * mockResults.length)];
-
-            // Extrair preço numérico
-            const priceValue = parseFloat(result.price.replace('R$', '').replace(',', '.').trim());
-
             Alert.alert(
                 '✨ Produto Identificado!',
-                `📦 ${result.product}\n💰 ${result.price}\n\nDeseja adicionar à sua lista?`,
+                `📦 ${name}\n💰 R$ ${price.toFixed(2)}\n\nDeseja adicionar à sua lista?`,
                 [
                     {
                         text: 'Cancelar',
@@ -51,10 +47,10 @@ export default function CaptureScreen({ navigation }: any) {
                         onPress: async () => {
                             // Adicionar produto ao carrinho
                             await addProduct({
-                                name: result.product,
-                                price: priceValue,
+                                name,
+                                price,
                                 quantity: 1,
-                                imageUri: imageUri
+                                imageUri
                             });
 
                             await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -62,7 +58,7 @@ export default function CaptureScreen({ navigation }: any) {
 
                             Alert.alert(
                                 '✅ Adicionado!',
-                                `${result.product} foi adicionado à sua lista de compras`,
+                                `${name} foi adicionado à sua lista de compras`,
                                 [
                                     { text: 'Capturar Outro' },
                                     { text: 'Ver Carrinho', onPress: () => navigation.navigate('Tabs', { screen: 'Cart' }) },
@@ -72,7 +68,18 @@ export default function CaptureScreen({ navigation }: any) {
                     }
                 ]
             );
-        }, 2000);
+        } catch (error: any) {
+            console.error('❌ Erro no OCR:', error);
+            setAnalyzing(false);
+
+            Alert.alert(
+                '❌ Erro ao Identificar',
+                'Não conseguimos identificar o produto. Tente:\n\n• Melhor iluminação\n• Foto mais nítida\n• Texto mais visível',
+                [
+                    { text: 'Tentar Novamente', onPress: () => setCapturedImage(null) }
+                ]
+            );
+        }
     };
 
     const takePicture = async () => {

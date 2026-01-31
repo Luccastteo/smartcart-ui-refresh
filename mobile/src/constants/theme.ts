@@ -1,35 +1,45 @@
 export const COLORS = {
-    background: '#0a0a0a',
-    backgroundSecondary: '#0f0f0f',
-    surface: '#1a1a1a',
-    surfaceHighlight: '#262626',
-    surfaceCard: '#1f1f1f',
-    surfaceSection: '#141414',
-    border: '#262626',
-    borderSubtle: '#1f1f1f',
-    textPrimary: '#e5e5e5',
-    textSecondary: '#a3a3a3',
-    textOnBrand: '#ffffff',
-    muted: '#737373',
-    mutedDark: '#525252',
-    accent: '#a3e635', // Lime
-    accentSecondary: '#84cc16',
-    danger: '#f87171',
-    blue: '#60a5fa',
-    coral: '#fb7185', // For welcome screen
+    // Backgrounds - Nova paleta suave
+    background: '#262F30',
+    backgroundSecondary: '#2E3839',
+    surface: '#2E3839',
+    surfaceHighlight: '#3A4445',
+    surfaceCard: '#2E3839',
+    surfaceSection: '#1A2021',
+
+    // Borders - Mais sutis
+    border: '#3A4445',
+    borderSubtle: '#2E3839',
+
+    // Text
+    textPrimary: '#FFFFFF',
+    textSecondary: '#A0AEC0',
+    textOnBrand: '#262F30',
+    muted: '#718096',
+    mutedDark: '#4A5556',
+
+    // Accent - Mantém lime
+    accent: '#A3E635',
+    accentSecondary: '#84CC16',
+    accentLight: '#BEF264',
+
+    // Status
+    danger: '#EF4444',
+    blue: '#3B82F6',
+    coral: '#FB7185',
 
     // Status colors for transactions
-    statusSuccess: '#10B981',  // Green for income
-    statusError: '#EF4444',    // Red for expenses
-    statusWarning: '#F59E0B',  // Yellow for alerts
+    statusSuccess: '#10B981',
+    statusError: '#EF4444',
+    statusWarning: '#F59E0B',
 
     // Gradient colors
-    gradientStart: '#8B5CF6',  // Purple primary
-    gradientEnd: '#7C3AED',    // Purple darker
+    gradientStart: '#8B5CF6',
+    gradientEnd: '#7C3AED',
 
     // Action colors
-    actionPrimary: '#8B5CF6',
-    actionPrimaryActive: '#7C3AED',
+    actionPrimary: '#FFFFFF',
+    actionPrimaryActive: '#F3F4F6',
 };
 
 export const RADIUS = {
@@ -40,8 +50,15 @@ export const RADIUS = {
 };
 
 export const FONTS = {
-    regular: 'Inter_400Regular',
-    medium: 'Inter_500Medium',
-    bold: 'Inter_700Bold',
-    light: 'Inter_300Light',
+    regular: 'System',
+    medium: 'System',
+    bold: 'System',
+    light: 'System',
+};
+
+// Borders mais finos (estilo Uber/Nubank)
+export const BORDERS = {
+    thin: 1,
+    medium: 1.5,
+    thick: 2,
 };
