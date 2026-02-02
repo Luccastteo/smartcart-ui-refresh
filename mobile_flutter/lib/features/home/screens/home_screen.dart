@@ -6,11 +6,27 @@ import '../../../theme/typography.dart';
 import '../../../theme/spacing.dart';
 import '../../../features/auth/providers/auth_provider.dart';
 
-class HomeScreen extends ConsumerWidget {
+import '../../../core/services/update_service.dart';
+
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Check for updates after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateService().checkUpdates(context);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final userName = user?.email?.split('@').first ?? 'User';
 

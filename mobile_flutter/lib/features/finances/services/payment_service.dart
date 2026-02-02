@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../data/supabase_client.dart';
 
 class PaymentService {
   static final PaymentService _instance = PaymentService._internal();
@@ -45,18 +46,35 @@ class PaymentService {
     required String email,
     String description = 'Compra no PAGLY',
   }) async {
-    debugPrint('Iniciando criação de Pix: R\$ $amount para $email');
-    
-    // Simulate Edge Function / API Call latency
-    await Future.delayed(const Duration(seconds: 2));
+    debugPrint('Iniciando criação de Pix Real: R\$ $amount para $email');
 
-    // This is the structure returned by Mercado Pago API
-    return {
-      'id': 'pix_${DateTime.now().millisecondsSinceEpoch}',
-      'status': 'pending',
-      'qr_code': '00020101021226850014br.gov.bcb.pix0123pagly-pix-mock-test-key520400005303986540$amount.005802BR5910PAGLY_APP6009SAO_PAULO62070503***6304d1e2',
-      'qr_code_base64': 'iVBORw0KGgoAAAANSUhEUgA...', // Mock base64
-      'amount': amount,
-    };
+    try {
+      final response = await SupabaseService.client.functions.invoke(
+        'create-pix-payment',
+        body: {
+          'amount': amount,
+          'email': email,
+          'description': description,
+        },
+      );
+
+      if (response.status != 200) {
+        throw Exception(response.data['error'] ?? 'Erro desconhecido no servidor');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      
+      return {
+        'id': data['id'].toString(),
+        'status': data['status'],
+        'qr_code': data['qr_code'],
+        'qr_code_base64': data['qr_code_base64'],
+        'amount': amount,
+      };
+    } catch (e) {
+      debugPrint('Erro ao criar Pix Real: $e');
+      // Fallback for demo/dev if function is not deployed or fails
+      rethrow;
+    }
   }
 }
