@@ -14,6 +14,8 @@ import '../features/finances/screens/pix_payment_screen.dart';
 import '../features/auth/screens/profile_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 
+import '../features/auth/screens/auth_screen.dart';
+
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
 
@@ -22,6 +24,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final isAuthenticated = authState.value?.session != null;
       final isAuthRoute = state.matchedLocation.startsWith('/welcome') ||
+          state.matchedLocation.startsWith('/auth') ||
           state.matchedLocation.startsWith('/signin') ||
           state.matchedLocation.startsWith('/signup');
 
@@ -38,6 +41,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/welcome',
         builder: (context, state) => const WelcomeScreen(),
+      ),
+      GoRoute(
+        path: '/auth',
+        builder: (context, state) => const AuthScreen(),
       ),
       GoRoute(
         path: '/signin',

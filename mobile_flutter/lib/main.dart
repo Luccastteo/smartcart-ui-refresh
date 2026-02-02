@@ -5,20 +5,18 @@ import 'data/supabase_client.dart';
 import 'theme/app_theme.dart';
 import 'router/app_router.dart';
 
+import 'theme/app_theme_v2.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Load environment variables
-  await dotenv.load(fileName: '.env');
+  await dotenv.load(fileName: ".env");
   
   // Initialize Supabase
   await SupabaseService.initialize();
   
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends ConsumerWidget {
@@ -31,7 +29,9 @@ class MyApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'PAGLY',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppThemeV2.lightTheme,
+      darkTheme: AppThemeV2.darkTheme,
+      themeMode: ThemeMode.dark,
       routerConfig: router,
     );
   }

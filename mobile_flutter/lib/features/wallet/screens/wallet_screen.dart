@@ -1,176 +1,192 @@
 import 'package:flutter/material.dart';
-import '../../../theme/colors.dart';
-import '../../../theme/typography.dart';
-import '../../../theme/spacing.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../theme/app_colors_v2.dart';
+import '../../../l10n/app_strings.dart';
+import '../../home/widgets/balance_cards.dart';
+import '../../auth/providers/auth_provider.dart';
 
-class WalletScreen extends StatelessWidget {
+class WalletScreen extends ConsumerWidget {
   const WalletScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+    final userName = user?.userMetadata?['full_name'] ?? user?.email?.split('@').first ?? 'Usuário';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return WillPopScope(
+      onWillPop: () async {
+        context.go('/home');
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: Container(
+            margin: const EdgeInsets.only(left: 16),
+            decoration: BoxDecoration(
+              color: isDark ? AppColorsV2.cardDark : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, size: 20),
+              onPressed: () => context.go('/home'),
+            ),
+          ),
+          title: const Text(
+            AppStrings.navWallet,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Minha Carteira', style: AppTypography.h2),
-              const SizedBox(height: AppSpacing.xl),
+              BalanceCards(
+                balance: 3922.40,
+                userName: userName,
+              ),
+              const SizedBox(height: 32),
               
-              // Virtual Card
-              _buildVirtualCard(),
-              
-              const SizedBox(height: AppSpacing.xl),
-              
-              Text('Métodos de Pagamento', style: AppTypography.h3),
-              const SizedBox(height: AppSpacing.md),
-              
-              _buildPaymentMethod('PIX', 'Chave Cadastrada', Icons.pix, AppColors.accent),
-              const SizedBox(height: AppSpacing.md),
-              _buildPaymentMethod('Cartão Final 4242', 'Vence 12/28', Icons.credit_card, Colors.blue),
-              
-              const SizedBox(height: AppSpacing.xl),
-              
-              _buildBalanceSummary(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildVirtualCard() {
-    return Container(
-      width: double.infinity,
-      height: 200,
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.accent, Color(0xFFA3E635)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.accent.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Icon(Icons.wifi_tethering, color: AppColors.textOnBrand),
               Text(
-                'PAGLY CARD',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textOnBrand,
+                'Métodos de Pagamento',
+                style: TextStyle(
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  color: isDark ? AppColorsV2.textPrimaryDark : AppColorsV2.textPrimaryLight,
                 ),
               ),
-            ],
-          ),
-          const Text(
-            '**** **** **** 4242',
-            style: TextStyle(
-              color: AppColors.textOnBrand,
-              fontSize: 22,
-              letterSpacing: 2,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'VALOR DISPONÍVEL',
-                    style: AppTypography.small.copyWith(color: AppColors.textOnBrand.withOpacity(0.7)),
-                  ),
-                  Text(
-                    'R\$ 2.500,00',
-                    style: AppTypography.h3.copyWith(color: AppColors.textOnBrand),
-                  ),
-                ],
+              const SizedBox(height: 16),
+              
+              _buildPaymentMethod(
+                context,
+                icon: Icons.credit_card,
+                title: 'Cartão Principal',
+                subtitle: 'Visa •••• 4364',
+                isDark: isDark,
               ),
-              const Icon(Icons.contactless, color: AppColors.textOnBrand, size: 32),
+              const SizedBox(height: 12),
+              _buildPaymentMethod(
+                context,
+                icon: Icons.account_balance,
+                title: 'Saldo Pagly',
+                subtitle: 'R\$ 3.922,40',
+                isDark: isDark,
+              ),
+              
+              const SizedBox(height: 32),
+              _buildSummarySection(isDark),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildPaymentMethod(String title, String subtitle, IconData icon, Color color) {
+  Widget _buildPaymentMethod(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool isDark,
+  }) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
+        color: isDark ? AppColorsV2.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: isDark ? AppColorsV2.borderDark : AppColorsV2.borderLight,
+        ),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: AppColorsV2.cardPurple.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: color),
+            child: Icon(icon, color: AppColorsV2.cardPurple),
           ),
-          const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppTypography.bodyMedium),
-                Text(subtitle, style: AppTypography.caption),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColorsV2.textPrimaryDark : AppColorsV2.textPrimaryLight,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? AppColorsV2.textSecondaryDark : AppColorsV2.textSecondaryLight,
+                  ),
+                ),
               ],
             ),
           ),
-          const Icon(Icons.chevron_right, color: AppColors.muted),
+          Icon(
+            Icons.chevron_right,
+            color: isDark ? AppColorsV2.textTertiaryDark : AppColorsV2.textTertiaryLight,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildBalanceSummary() {
+  Widget _buildSummarySection(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? AppColorsV2.cardDark : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? AppColorsV2.borderDark : AppColorsV2.borderLight,
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildSummaryItem('Ganhos', 'R\$ 10k', AppColors.success),
-          Container(width: 1, height: 40, color: AppColors.border),
-          _buildSummaryItem('Gastos', 'R\$ 4k', AppColors.error),
-          Container(width: 1, height: 40, color: AppColors.border),
-          _buildSummaryItem('Cashback', 'R\$ 120', AppColors.accent),
+          _buildSummaryItem('Ganhos', 'R\$ 10k', AppColorsV2.success, isDark),
+          Container(
+            width: 1, 
+            height: 40, 
+            color: isDark ? AppColorsV2.borderDark : AppColorsV2.borderLight
+          ),
+          _buildSummaryItem('Gastos', 'R\$ 4k', AppColorsV2.error, isDark),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryItem(String label, String value, Color color) {
+  Widget _buildSummaryItem(String label, String value, Color color, bool isDark) {
     return Column(
       children: [
-        Text(label, style: AppTypography.caption),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: isDark ? AppColorsV2.textSecondaryDark : AppColorsV2.textSecondaryLight,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(value, style: AppTypography.bodyMedium.copyWith(color: color, fontWeight: FontWeight.bold)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
       ],
     );
   }

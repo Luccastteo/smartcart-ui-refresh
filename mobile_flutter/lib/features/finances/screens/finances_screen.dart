@@ -1,45 +1,74 @@
 import 'package:flutter/material.dart';
-import '../../../theme/colors.dart';
-import '../../../theme/typography.dart';
-import '../../../theme/spacing.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Assuming Riverpod is used for ConsumerWidget
+import 'package:go_router/go_router.dart'; // Assuming go_router is used for context.go
+import '../../../theme/app_colors_v2.dart';
+import '../../../l10n/app_strings.dart';
+import '../../home/widgets/expense_list_item_v2.dart';
 
-class FinancesScreen extends StatelessWidget {
+class FinancesScreen extends ConsumerWidget {
   const FinancesScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return WillPopScope(
+      onWillPop: () async {
+        context.go('/home');
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: Container(
+            margin: const EdgeInsets.only(left: 16),
+            decoration: BoxDecoration(
+              color: isDark ? AppColorsV2.cardDark : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, size: 20),
+              onPressed: () => context.go('/home'),
+            ),
+          ),
+          title: const Text(
+            AppStrings.navFinance,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Análise Financeira', style: AppTypography.h2),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'Acompanhe seus gastos e metas',
-                style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+              // Statistics or Chart could go here
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppColorsV2.cardPurple,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Resumo Mensal',
+                      style: TextStyle(color: Colors.white.withOpacity(0.8)),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'R\$ 5.432,10',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: 32),
               
-              // Overview Card
-              _buildOverviewCard(),
-              
-              const SizedBox(height: AppSpacing.xl),
-              
-              Text('Gasto por Categoria', style: AppTypography.h3),
-              const SizedBox(height: AppSpacing.md),
-              
-              _buildCategoryItem('Alimentação', 'R\$ 850,00', 0.65, AppColors.accent),
-              const SizedBox(height: AppSpacing.md),
-              _buildCategoryItem('Transporte', 'R\$ 220,00', 0.20, Colors.blue),
-              const SizedBox(height: AppSpacing.md),
-              _buildCategoryItem('Saúde', 'R\$ 150,00', 0.15, Colors.red),
-              
-              const SizedBox(height: AppSpacing.xl),
-              
+              const SizedBox(height: 24),
               _buildInsightCard(),
             ],
           ),
@@ -48,95 +77,26 @@ class FinancesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOverviewCard() {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildStat('Gasto Total', 'R\$ 1.220', AppColors.error),
-              _buildStat('Economia', 'R\$ 450', AppColors.success),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          // Chart placeholder
-          Container(
-            height: 150,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceHighlight.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Center(
-              child: Icon(Icons.show_chart, color: AppColors.accent, size: 48),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStat(String label, String value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppTypography.caption),
-        Text(
-          value,
-          style: AppTypography.h3.copyWith(color: color, fontSize: 24),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCategoryItem(String name, String value, double percent, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(name, style: AppTypography.bodyMedium),
-            Text(value, style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: percent,
-            backgroundColor: AppColors.surfaceHighlight,
-            color: color,
-            minHeight: 8,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildInsightCard() {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.accent.withOpacity(0.1),
+        color: AppColorsV2.brandGreen.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.accent.withOpacity(0.3)),
+        border: Border.all(color: AppColorsV2.brandGreen.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.lightbulb_outline, color: AppColors.accent),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
+          const Icon(Icons.lightbulb_outline, color: AppColorsV2.brandGreen),
+          const SizedBox(width: 12),
+          const Expanded(
             child: Text(
               'Você economizou 15% a mais que no mês passado com listas!',
-              style: AppTypography.small.copyWith(color: AppColors.accent),
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColorsV2.brandGreen,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],

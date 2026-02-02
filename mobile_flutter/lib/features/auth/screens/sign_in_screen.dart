@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../theme/colors.dart';
-import '../../../theme/typography.dart';
-import '../../../theme/spacing.dart';
-import '../../../core/utils/validators.dart';
+import '../../../core/widgets/auth_background.dart';
+import '../../../l10n/app_strings.dart';
+import '../../../theme/app_colors_v2.dart';
 import '../providers/auth_provider.dart';
 
 class SignInScreen extends ConsumerStatefulWidget {
@@ -18,8 +17,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
-  bool _rememberMe = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -31,209 +29,121 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Future<void> _handleSignIn() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final controller = ref.read(authControllerProvider.notifier);
-    await controller.signIn(
-      _emailController.text.trim(),
-      _passwordController.text,
-    );
-
-    final state = ref.read(authControllerProvider);
-    state.when(
-      data: (_) => context.go('/home'),
-      loading: () {},
-      error: (error, _) {
+    setState(() => _isLoading = true);
+    try {
+      await ref.read(authControllerProvider.notifier).signIn(
+            _emailController.text.trim(),
+            _passwordController.text.trim(),
+          );
+      // GoRouter handles redirection
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro: ${error.toString()}'),
-            backgroundColor: AppColors.error,
+            content: Text(e.toString()),
+            backgroundColor: AppColorsV2.error,
           ),
         );
-      },
-    );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
-    final isLoading = authState.isLoading;
-
-    return Scaffold(
-      body: SafeArea(
+    return AuthBackground(
+      child: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.symmetric(horizontal: 32.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Back Button
-              Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  onPressed: () => context.go('/welcome'),
-                  icon: const Icon(Icons.arrow_back),
-                  style: IconButton.styleFrom(
-                    backgroundColor: AppColors.surfaceCard,
-                  ),
+              const Text(
+                AppStrings.welcomeLogo,
+                style: TextStyle(
+                  fontSize: 50,
+                  fontWeight: FontWeight.bold,
+                  color: AppColorsV2.brandGreen,
+                  letterSpacing: 4,
                 ),
               ),
-              
-              const SizedBox(height: AppSpacing.lg),
-              
-              // Card
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceCard,
-                  borderRadius: BorderRadius.circular(AppRadius.xl),
+              const SizedBox(height: 60),
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _emailController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.1),
+                        hintText: 'E-mail',
+                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                        prefixIcon: const Icon(Icons.email_outlined, color: Colors.white70),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) => value == null || !value.contains('@') ? 'E-mail inválido' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _passwordController,
+                      style: const TextStyle(color: Colors.white),
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.1),
+                        hintText: 'Senha',
+                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                        prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      validator: (value) => value == null || value.length < 6 ? 'Senha muito curta' : null,
+                    ),
+                    const SizedBox(height: 40),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _handleSignIn,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColorsV2.brandGreen,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: _isLoading
+                            ? const CircularProgressIndicator(color: Colors.black)
+                            : const Text(
+                                AppStrings.signIn,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text('Welcome Back!', style: AppTypography.h2),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        'Continue your adventure.',
-                        style: AppTypography.caption,
-                      ),
-                      
-                      const SizedBox(height: AppSpacing.xl),
-                      
-                      // Email
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: const InputDecoration(
-                          hintText: 'Email',
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: Validators.email,
-                        enabled: !isLoading,
-                      ),
-                      
-                      const SizedBox(height: AppSpacing.lg),
-                      
-                      // Password
-                      TextFormField(
-                        controller: _passwordController,
-                        decoration: InputDecoration(
-                          hintText: 'Password',
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              color: AppColors.muted,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                          ),
-                        ),
-                        obscureText: _obscurePassword,
-                        validator: Validators.password,
-                        enabled: !isLoading,
-                      ),
-                      
-                      const SizedBox(height: AppSpacing.lg),
-                      
-                      // Remember Me & Forgot Password
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: Checkbox(
-                                  value: _rememberMe,
-                                  onChanged: isLoading
-                                      ? null
-                                      : (value) {
-                                          setState(() {
-                                            _rememberMe = value ?? false;
-                                          });
-                                        },
-                                  fillColor: MaterialStateProperty.resolveWith(
-                                    (states) {
-                                      if (states.contains(MaterialState.selected)) {
-                                        return AppColors.accent;
-                                      }
-                                      return Colors.transparent;
-                                    },
-                                  ),
-                                  side: const BorderSide(
-                                    color: AppColors.border,
-                                    width: 1,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              Text(
-                                'Remember me',
-                                style: AppTypography.caption,
-                              ),
-                            ],
-                          ),
-                          TextButton(
-                            onPressed: isLoading ? null : () {},
-                            child: Text(
-                              'Forgot password?',
-                              style: AppTypography.caption,
-                            ),
-                          ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: AppSpacing.xl),
-                      
-                      // Sign In Button
-                      ElevatedButton(
-                        onPressed: isLoading ? null : _handleSignIn,
-                        child: isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.textOnBrand,
-                                ),
-                              )
-                            : const Text('Sign In'),
-                      ),
-                      
-                      const SizedBox(height: AppSpacing.lg),
-                      
-                      // Sign Up Link
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Already have an account? ',
-                            style: AppTypography.caption,
-                          ),
-                          TextButton(
-                            onPressed: isLoading
-                                ? null
-                                : () => context.go('/signup'),
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: Text(
-                              'Sign Up',
-                              style: AppTypography.caption.copyWith(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+              ),
+              const SizedBox(height: 24),
+              TextButton(
+                onPressed: () => context.go('/signup'),
+                child: Text(
+                  AppStrings.createAccount,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 16,
                   ),
                 ),
               ),
