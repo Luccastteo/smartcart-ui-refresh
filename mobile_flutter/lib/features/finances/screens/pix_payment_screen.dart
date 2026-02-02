@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../theme/app_colors_v2.dart';
 import '../../../l10n/app_strings.dart';
 import '../../../core/utils/currency_formatter.dart';
+import '../../cart/providers/cart_provider.dart';
 
-class PixPaymentScreen extends StatefulWidget {
+class PixPaymentScreen extends ConsumerStatefulWidget {
   final double amount;
   final String qrCode;
   final String qrCodeBase64;
@@ -19,10 +21,10 @@ class PixPaymentScreen extends StatefulWidget {
   });
 
   @override
-  State<PixPaymentScreen> createState() => _PixPaymentScreenState();
+  ConsumerState<PixPaymentScreen> createState() => _PixPaymentScreenState();
 }
 
-class _PixPaymentScreenState extends State<PixPaymentScreen> {
+class _PixPaymentScreenState extends ConsumerState<PixPaymentScreen> {
   bool _copied = false;
 
   void _copyToClipboard() {
@@ -37,6 +39,32 @@ class _PixPaymentScreenState extends State<PixPaymentScreen> {
         backgroundColor: AppColorsV2.cardPurple,
       ),
     );
+  }
+
+  Future<void> _confirmPayment() async {
+    showDialog(
+      context: context, 
+      barrierDismissible: false, 
+      builder: (context) => const Center(child: CircularProgressIndicator())
+    );
+    
+    try {
+      await ref.read(cartControllerProvider.notifier).checkout(widget.amount);
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pagamento confirmado e registrado!'))
+        );
+        context.go('/finances');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: $e'), backgroundColor: AppColorsV2.error)
+        );
+      }
+    }
   }
 
   @override
@@ -194,6 +222,23 @@ class _PixPaymentScreenState extends State<PixPaymentScreen> {
               ),
               
               const SizedBox(height: 48),
+
+              // Confirm Payment Button (Demo)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _confirmPayment(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColorsV2.success,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text('Confirmar Pagamento (Demo)', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+
+              const SizedBox(height: 40),
 
               // Steps
               _buildStep(Icons.account_balance, 'Abra o app do seu banco ou carteira digital', isDark),

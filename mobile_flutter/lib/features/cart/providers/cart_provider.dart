@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/repositories/cart_repository.dart';
 import '../../../domain/models/cart_item.dart';
+import '../../../data/repositories/finance_repository.dart';
+import '../../finances/providers/finance_provider.dart';
 
 // Cart Repository Provider
 final cartRepositoryProvider = Provider<CartRepository>((ref) {
@@ -30,8 +32,9 @@ final cartTotalProvider = Provider<double>((ref) {
 // Cart Controller
 class CartController extends StateNotifier<AsyncValue<void>> {
   final CartRepository _repository;
+  final FinanceRepository _financeRepository;
 
-  CartController(this._repository) : super(const AsyncValue.data(null));
+  CartController(this._repository, this._financeRepository) : super(const AsyncValue.data(null));
 
   Future<void> addItem({
     required String name,
@@ -64,6 +67,23 @@ class CartController extends StateNotifier<AsyncValue<void>> {
     });
   }
 
+  Future<void> checkout(double total) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      // 1. Record the transaction
+      await _financeRepository.createTransaction(
+        title: 'Compra SmartCart',
+        amount: total,
+        category: 'groceries',
+        type: 'expense',
+        description: 'Compra realizada via app',
+      );
+      
+      // 2. Clear the cart
+      await _repository.clearCart();
+    });
+  }
+
   Future<void> clearCart() async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
@@ -76,5 +96,6 @@ class CartController extends StateNotifier<AsyncValue<void>> {
 final cartControllerProvider =
     StateNotifierProvider<CartController, AsyncValue<void>>((ref) {
   final repository = ref.watch(cartRepositoryProvider);
-  return CartController(repository);
+  final financeRepository = ref.watch(financeRepositoryProvider);
+  return CartController(repository, financeRepository);
 });

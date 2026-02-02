@@ -23,55 +23,53 @@ class OcrService {
     
     List<double> foundPrices = [];
     for (final line in lines) {
-      final match = priceRegex.firstMatch(line);
-      if (match != null) {
+      final matches = priceRegex.allMatches(line);
+      for (final match in matches) {
         String pStr = match.group(1)!;
         // Normalize: remove thousands dots, replace comma with dot
         pStr = pStr.replaceAll('.', '').replaceAll(',', '.');
         final pVal = double.tryParse(pStr);
-        if (pVal != null) foundPrices.add(pVal);
+        if (pVal != null && pVal > 0) foundPrices.add(pVal);
       }
     }
 
     if (foundPrices.isNotEmpty) {
-      // Usually the price of interest is the largest one found in a single product line
-      // or the first one if it's a shelf tag.
+      // Find the most likely price (often the largest or the first if it's a tag)
       price = foundPrices.first;
       print('OCR Found Prices: $foundPrices -> Selected: $price');
     }
 
     // 2. Better name detection
-    // We look for lines that look like product names:
-    // - Long enough (> 3 chars)
-    // - Not just numbers
-    // - Not a price
-    // - Not common receipt "noise"
-    final noiseKeywords = ['CNPJ', 'IE', 'DATA', 'VALOR', 'PREÇO', 'TOTAL', 'ITEM', 'TOTAL', 'PAGAR'];
+    final noiseKeywords = [
+      'CNPJ', 'IE', 'DATA', 'VALOR', 'PREÇO', 'TOTAL', 'ITEM', 'PAGAR', 'CUPOM', 'FISCAL',
+      'OBRIGADO', 'VOLTE', 'SEMPRE', 'CLIENTE', 'ENDEREÇO', 'TEL:', 'CONTRIBUINTE'
+    ];
     
     for (final line in lines) {
-      final cleanLine = line.toUpperCase();
+      final cleanLine = line.trim();
+      if (cleanLine.length < 3) continue;
       
-      // Skip lines with too many numbers or symbols
-      if (RegExp(r'\d{5,}').hasMatch(line)) continue; 
+      final upperLine = cleanLine.toUpperCase();
+      
+      // Skip if it's just numbers (like codes or dates)
+      if (RegExp(r'^\d+[\d\s\-\/\.]*$').hasMatch(cleanLine)) continue;
       
       // Skip if contains noise keywords
       bool isNoise = false;
       for (final kw in noiseKeywords) {
-        if (cleanLine.contains(kw)) {
+        if (upperLine.contains(kw)) {
           isNoise = true;
           break;
         }
       }
       if (isNoise) continue;
 
-      // Skip if it contains a price
-      if (priceRegex.hasMatch(line)) continue;
+      // Skip lines that are likely just prices
+      if (priceRegex.hasMatch(cleanLine)) continue;
 
-      // First good-looking line is often the product name (in tags/receipts)
-      if (line.length > 3) {
-        name = line;
-        break;
-      }
+      // The first "clean" line is usually the product name
+      name = cleanLine;
+      break;
     }
 
     print('OCR Final Guess - Name: $name, Price: $price');

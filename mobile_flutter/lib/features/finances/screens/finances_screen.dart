@@ -4,12 +4,15 @@ import 'package:go_router/go_router.dart'; // Assuming go_router is used for con
 import '../../../theme/app_colors_v2.dart';
 import '../../../l10n/app_strings.dart';
 import '../../home/widgets/expense_list_item_v2.dart';
+import '../providers/finance_provider.dart';
 
 class FinancesScreen extends ConsumerWidget {
   const FinancesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final transactionsAsync = ref.watch(transactionsProvider);
+    final summary = ref.watch(financeSummaryProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return WillPopScope(
@@ -35,42 +38,78 @@ class FinancesScreen extends ConsumerWidget {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Statistics or Chart could go here
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColorsV2.cardPurple,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      'Resumo Mensal',
-                      style: TextStyle(color: Colors.white.withOpacity(0.8)),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'R\$ 5.432,10',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+        body: RefreshIndicator(
+          onRefresh: () async => ref.invalidate(transactionsProvider),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Real Summary
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColorsV2.cardPurple,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Resumo Mensal',
+                        style: TextStyle(color: Colors.white.withOpacity(0.8)),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text(
+                        'R\$ ${summary['expenses']?.toStringAsFixed(2).replaceAll('.', ',')}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-              
-              const SizedBox(height: 24),
-              _buildInsightCard(),
-            ],
+                const SizedBox(height: 32),
+
+                Text(
+                  'Transações Recentes',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                transactionsAsync.when(
+                  data: (transactions) {
+                    if (transactions.isEmpty) {
+                      return const Center(child: Text('Nenhuma transação encontrada'));
+                    }
+                    return Column(
+                      children: transactions.map((t) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: ExpenseListItemV2(
+                          title: t.title,
+                          category: t.category,
+                          time: '${t.date.hour}:${t.date.minute.toString().padLeft(2, '0')}',
+                          date: '${t.date.day}/${t.date.month}/${t.date.year}',
+                          amount: t.amount,
+                        ),
+                      )).toList(),
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Center(child: Text('Erro: $e')),
+                ),
+                
+                const SizedBox(height: 24),
+                _buildInsightCard(),
+              ],
+            ),
           ),
         ),
       ),

@@ -25,8 +25,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isAuthenticated = authState.value?.session != null;
       final isAuthRoute = state.matchedLocation.startsWith('/welcome') ||
           state.matchedLocation.startsWith('/auth') ||
-          state.matchedLocation.startsWith('/signin') ||
-          state.matchedLocation.startsWith('/signup');
+          state.matchedLocation.startsWith('/login') ||
+          state.matchedLocation.startsWith('/register');
 
       if (!isAuthenticated && !isAuthRoute) {
         return '/welcome';
@@ -47,11 +47,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AuthScreen(),
       ),
       GoRoute(
-        path: '/signin',
+        path: '/login',
         builder: (context, state) => const SignInScreen(),
       ),
       GoRoute(
-        path: '/signup',
+        path: '/register',
         builder: (context, state) => const SignUpScreen(),
       ),
 

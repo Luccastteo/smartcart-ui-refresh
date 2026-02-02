@@ -5,6 +5,7 @@ import '../../../theme/app_colors_v2.dart';
 import '../../../l10n/app_strings.dart';
 import '../../home/widgets/balance_cards.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../finances/providers/finance_provider.dart';
 
 class WalletScreen extends ConsumerWidget {
   const WalletScreen({super.key});
@@ -12,6 +13,8 @@ class WalletScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
+    final bankAccountsAsync = ref.watch(bankAccountsProvider);
+    final summary = ref.watch(financeSummaryProvider);
     final userName = user?.userMetadata?['full_name'] ?? user?.email?.split('@').first ?? 'Usuário';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -38,47 +41,74 @@ class WalletScreen extends ConsumerWidget {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              BalanceCards(
-                balance: 3922.40,
-                userName: userName,
-              ),
-              const SizedBox(height: 32),
-              
-              Text(
-                'Métodos de Pagamento',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? AppColorsV2.textPrimaryDark : AppColorsV2.textPrimaryLight,
+        body: RefreshIndicator(
+          onRefresh: () async => ref.invalidate(bankAccountsProvider),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                BalanceCards(
+                  balance: summary['balance'] ?? 0.0,
+                  userName: userName,
                 ),
-              ),
-              const SizedBox(height: 16),
-              
-              _buildPaymentMethod(
-                context,
-                icon: Icons.credit_card,
-                title: 'Cartão Principal',
-                subtitle: 'Visa •••• 4364',
-                isDark: isDark,
-              ),
-              const SizedBox(height: 12),
-              _buildPaymentMethod(
-                context,
-                icon: Icons.account_balance,
-                title: 'Saldo Pagly',
-                subtitle: 'R\$ 3.922,40',
-                isDark: isDark,
-              ),
-              
-              const SizedBox(height: 32),
-              _buildSummarySection(isDark),
-            ],
+                const SizedBox(height: 32),
+                
+                Text(
+                  'Métodos de Pagamento',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? AppColorsV2.textPrimaryDark : AppColorsV2.textPrimaryLight,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                bankAccountsAsync.when(
+                  data: (accounts) {
+                    if (accounts.isEmpty) {
+                      return _buildEmptyAccounts(context, isDark);
+                    }
+                    return Column(
+                      children: accounts.map((acc) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildPaymentMethod(
+                          context,
+                          icon: acc.accountType == 'credit_card' ? Icons.credit_card : Icons.account_balance,
+                          title: acc.bankName,
+                          subtitle: acc.accountType == 'credit_card' 
+                              ? '•••• ${acc.cardNumberLast4 ?? '0000'}'
+                              : 'Saldo: R\$ ${acc.balance.toStringAsFixed(2).replaceAll('.', ',')}',
+                          isDark: isDark,
+                        ),
+                      )).toList(),
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Center(child: Text('Erro: $e')),
+                ),
+                
+                const SizedBox(height: 32),
+                _buildSummarySection(summary, isDark),
+              ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyAccounts(BuildContext context, bool isDark) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          children: [
+            Icon(Icons.account_balance_wallet_outlined, size: 48, color: isDark ? Colors.white54 : Colors.black45),
+            const SizedBox(height: 12),
+            const Text('Nenhuma conta ou cartão cadastrado'),
+          ],
         ),
       ),
     );
@@ -143,7 +173,7 @@ class WalletScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSummarySection(bool isDark) {
+  Widget _buildSummarySection(Map<String, double> summary, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -156,13 +186,13 @@ class WalletScreen extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildSummaryItem('Ganhos', 'R\$ 10k', AppColorsV2.success, isDark),
+          _buildSummaryItem('Ganhos', 'R\$ ${summary['income']?.toStringAsFixed(0)}', AppColorsV2.success, isDark),
           Container(
             width: 1, 
             height: 40, 
             color: isDark ? AppColorsV2.borderDark : AppColorsV2.borderLight
           ),
-          _buildSummaryItem('Gastos', 'R\$ 4k', AppColorsV2.error, isDark),
+          _buildSummaryItem('Gastos', 'R\$ ${summary['expenses']?.toStringAsFixed(0)}', AppColorsV2.error, isDark),
         ],
       ),
     );
