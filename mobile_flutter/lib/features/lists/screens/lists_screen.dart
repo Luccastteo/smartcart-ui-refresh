@@ -4,75 +4,134 @@ import 'package:go_router/go_router.dart';
 import '../../../theme/colors.dart';
 import '../../../theme/typography.dart';
 import '../../../theme/spacing.dart';
+import '../providers/lists_provider.dart';
 
 class ListsScreen extends ConsumerWidget {
   const ListsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final listsAsync = ref.watch(shoppingListsProvider);
+    final controller = ref.read(shoppingListControllerProvider.notifier);
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Minhas Listas', style: AppTypography.h2),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Gerencie suas compras',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Lists
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                children: [
-                  _buildListCard(
-                    context,
-                    'Compras do Mês',
-                    '31/01/2026',
-                    0,
-                    0.0,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  _buildListCard(
-                    context,
-                    'Churrasco Fim de Ano',
-                    '31/01/2026',
-                    0,
-                    0.0,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      appBar: AppBar(
+        title: const Text('Minhas Listas'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => _showCreateListDialog(context, controller, ref),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Criar lista em desenvolvimento'),
+      body: listsAsync.when(
+        data: (lists) {
+          if (lists.isEmpty) {
+            return _buildEmptyState(context, controller, ref);
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(shoppingListsProvider);
+            },
+            child: ListView.builder(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              itemCount: lists.length,
+              itemBuilder: (context, index) {
+                final list = lists[index];
+                return _buildListCard(
+                  context,
+                  list.name,
+                  'Hoje', // TODO: Format date
+                  list.itemCount,
+                  list.total,
+                  list.id,
+                );
+              },
             ),
           );
         },
-        backgroundColor: AppColors.accent,
-        child: const Icon(Icons.add, color: AppColors.textOnBrand),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Text('Erro: ${error.toString()}'),
+        ),
       ),
       bottomNavigationBar: _buildBottomNav(context, 1),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
+
+  void _showCreateListDialog(
+    BuildContext context,
+    ShoppingListController controller,
+    WidgetRef ref,
+  ) {
+    final nameController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Nova Lista'),
+        content: TextField(
+          controller: nameController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Nome da Lista',
+            hintText: 'Ex: Compras da Semana',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final name = nameController.text.trim();
+              if (name.isNotEmpty) {
+                await controller.createList(name);
+                ref.invalidate(shoppingListsProvider);
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+            child: const Text('Criar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(
+    BuildContext context,
+    ShoppingListController controller,
+    WidgetRef ref,
+  ) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.list_alt_outlined,
+            size: 64,
+            color: AppColors.muted,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            'Nenhuma lista criada',
+            style: AppTypography.h3,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Crie sua primeira lista de compras',
+            style: AppTypography.caption,
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          ElevatedButton.icon(
+            onPressed: () => _showCreateListDialog(context, controller, ref),
+            icon: const Icon(Icons.add),
+            label: const Text('Criar Lista'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -82,82 +141,71 @@ class ListsScreen extends ConsumerWidget {
     String date,
     int itemCount,
     double total,
+    String id,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          // Icon
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.accent.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+    return GestureDetector(
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Detalhes da lista $name em breve')),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border, width: 0.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceHighlight,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.shopping_basket_outlined,
+                color: AppColors.accent,
+              ),
             ),
-            child: const Icon(
-              Icons.shopping_bag_outlined,
-              color: AppColors.accent,
-              size: 24,
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name, style: AppTypography.bodyMedium),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        '$itemCount itens',
+                        style: AppTypography.small.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        'R\$ ${total.toStringAsFixed(2)}',
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.accent,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: AppTypography.bodyMedium),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.calendar_today,
-                      size: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      date,
-                      style: AppTypography.small.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Row(
-                  children: [
-                    Text(
-                      '$itemCount/0 itens',
-                      style: AppTypography.small.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      'R\$ ${total.toStringAsFixed(2)}',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.accent,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            const SizedBox(width: AppSpacing.md),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.textSecondary,
+              size: 20,
             ),
-          ),
-          
-          // Arrow
-          const Icon(
-            Icons.chevron_right,
-            color: AppColors.textSecondary,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -210,7 +258,8 @@ class ListsScreen extends ConsumerWidget {
             label: 'Listas',
           ),
           BottomNavigationBarItem(
-            icon: SizedBox.shrink(),
+            icon: Icon(Icons.qr_code_scanner),
+            activeIcon: Icon(Icons.qr_code_scanner),
             label: '',
           ),
           BottomNavigationBarItem(

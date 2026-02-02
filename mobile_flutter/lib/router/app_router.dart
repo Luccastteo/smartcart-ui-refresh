@@ -8,8 +8,10 @@ import '../features/home/screens/home_screen.dart';
 import '../features/lists/screens/lists_screen.dart';
 import '../features/cart/screens/cart_screen.dart';
 import '../features/scanner/screens/scanner_screen.dart';
-import '../features/finance/screens/finances_screen.dart';
+import '../features/finances/screens/finances_screen.dart';
 import '../features/wallet/screens/wallet_screen.dart';
+import '../features/finances/screens/pix_payment_screen.dart';
+import '../features/auth/screens/profile_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -70,6 +72,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/wallet',
         builder: (context, state) => const WalletScreen(),
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/checkout/pix',
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>;
+          return PixPaymentScreen(
+            amount: data['amount'] as double,
+            qrCode: data['qr_code'] as String,
+            qrCodeBase64: data['qr_code_base64'] as String,
+          );
+        },
       ),
     ],
   );

@@ -27,21 +27,25 @@ class HomeScreen extends ConsumerWidget {
                 child: Row(
                   children: [
                     // Avatar
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceCard,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.accent,
-                          width: 2,
+                    InkWell(
+                      onTap: () => context.push('/profile'),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceCard,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.accent,
+                            width: 2,
+                          ),
                         ),
-                      ),
-                      child: const Icon(
-                        Icons.person_outline,
-                        color: AppColors.accent,
-                        size: 24,
+                        child: const Icon(
+                          Icons.person_outline,
+                          color: AppColors.accent,
+                          size: 24,
+                        ),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../theme/colors.dart';
 import '../../../theme/typography.dart';
 import '../../../theme/spacing.dart';
 import '../../../core/utils/currency_formatter.dart';
 import '../../../domain/models/cart_item.dart';
 import '../providers/cart_provider.dart';
+import '../../finances/services/payment_service.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class CartScreen extends ConsumerWidget {
   const CartScreen({super.key});
@@ -48,6 +51,11 @@ class CartScreen extends ConsumerWidget {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddProductDialog(context, controller, ref),
+        backgroundColor: AppColors.accent,
+        child: const Icon(Icons.add, color: AppColors.textOnBrand),
+      ),
       body: cartItemsAsync.when(
         data: (items) {
           if (items.isEmpty) {
@@ -72,17 +80,9 @@ class CartScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   ElevatedButton.icon(
-                    onPressed: () {
-                      // Add test item
-                      controller.addItem(
-                        name: 'Produto Teste',
-                        price: 10.50,
-                        quantity: 1,
-                      );
-                      ref.invalidate(cartItemsProvider);
-                    },
+                    onPressed: () => _showAddProductDialog(context, controller, ref),
                     icon: const Icon(Icons.add),
-                    label: const Text('Adicionar Item Teste'),
+                    label: const Text('Adicionar Produto'),
                   ),
                 ],
               ),
@@ -111,7 +111,7 @@ class CartScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              _buildTotalSection(context, cartTotal),
+              _buildTotalSection(context, ref, cartTotal),
             ],
           );
         },
@@ -131,6 +131,63 @@ class CartScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showAddProductDialog(
+    BuildContext context,
+    CartController controller,
+    WidgetRef ref,
+  ) {
+    final nameController = TextEditingController();
+    final priceController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Novo Produto'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Nome do Produto',
+                hintText: 'Ex: Leite Integral',
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: priceController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Preço',
+                hintText: '0.00',
+                prefixText: r'R$ ',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final name = nameController.text.trim();
+              final price = double.tryParse(priceController.text) ?? 0.0;
+              if (name.isNotEmpty && price > 0) {
+                await controller.addItem(name: name, price: price);
+                ref.invalidate(cartItemsProvider);
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+            child: const Text('Adicionar'),
+          ),
+        ],
       ),
     );
   }
@@ -216,7 +273,7 @@ class CartScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTotalSection(BuildContext context, double total) {
+  Widget _buildTotalSection(BuildContext context, WidgetRef ref, double total) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: const BoxDecoration(
@@ -241,12 +298,37 @@ class CartScreen extends ConsumerWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: total > 0
-                    ? () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Checkout em desenvolvimento'),
+                    ? () async {
+                        final user = ref.read(currentUserProvider);
+                        final paymentService = PaymentService();
+                        
+                        // Show loading
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => const Center(
+                            child: CircularProgressIndicator(),
                           ),
                         );
+
+                        try {
+                          final pixData = await paymentService.createPixPayment(
+                            amount: total,
+                            email: user?.email ?? 'cliente@pagly.com',
+                          );
+                          
+                          if (context.mounted) {
+                            Navigator.pop(context); // Close loading
+                            context.push('/checkout/pix', extra: pixData);
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            Navigator.pop(context); // Close loading
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Erro ao criar PIX: $e')),
+                            );
+                          }
+                        }
                       }
                     : null,
                 child: const Text('Finalizar Compra'),
